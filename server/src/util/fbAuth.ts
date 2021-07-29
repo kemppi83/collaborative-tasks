@@ -1,10 +1,5 @@
 import { RequestHandler } from 'express';
-import * as admin from 'firebase-admin';
-import { adminConfig } from '../util/config';
-
-admin.initializeApp({
-  credential: admin.credential.cert(adminConfig)
-});
+import admin from './initAdmin';
 
 export const FBAuth: RequestHandler = (req, res, next) => {
   let idToken: string;

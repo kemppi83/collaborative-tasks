@@ -2,7 +2,7 @@
 
 // export const createTodo = (req: Request, res: Response, next: NextFunction) => {};
 
-// The same can be done much easier!
+// The same can be done easier!
 import { RequestHandler } from 'express';
 
 import { Todo } from '../models/todo';
