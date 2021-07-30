@@ -45,7 +45,7 @@ export const login: RequestHandler = (req, res) => {
     email: req.body.email,
     password: req.body.password
   };
-
+  console.log(req.body);
   const { valid, errors } = validateLoginData(user);
 
   if (!valid) return res.status(400).json(errors);
@@ -57,7 +57,11 @@ export const login: RequestHandler = (req, res) => {
       return data.user?.getIdToken();
     })
     .then(token => {
-      return res.json({ token });
+      return res.json({ user: {
+        first_name: 'Test',
+        last_name: 'User',
+      },
+      token, });
     })
     .catch(err => {
       console.error(err);

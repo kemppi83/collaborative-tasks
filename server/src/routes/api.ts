@@ -8,7 +8,7 @@ import { FBAuth } from '../util/fbAuth';
 const router = Router();
 
 // test route
-router.get('/test', test);
+router.get('/protected', FBAuth, test);
 
 // user routes
 router.post('/signup', signUp);

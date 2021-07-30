@@ -7,7 +7,7 @@ export const FBAuth: RequestHandler = (req, res, next) => {
     idToken = req.headers.authorization.split('Bearer ')[1];
   } else {
     console.error('No token found');
-    return res.status(403).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: 'Please login.' });
   }
 
   admin.auth().verifyIdToken(idToken)
@@ -18,6 +18,6 @@ export const FBAuth: RequestHandler = (req, res, next) => {
     })
     .catch(err => {
       console.error('Error while verifying token ', err);
-      return res.status(403).json(err);
+      return res.status(401).json(err);
     });
 };
