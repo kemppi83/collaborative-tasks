@@ -6,10 +6,10 @@ import { validateSignUpData, validateLoginData } from '../util/validators';
 import admin from '../util/initAdmin';
 import { sendEmail } from '../util/sendEmail';
 
-const actionCodeSettings = {
-  // URL you want to redirect back to. The domain (www.example.com) for
-  // this URL must be whitelisted in the Firebase Console.
-  url: 'http://localhost:3000/login',
+// URL you want to redirect back to. The domain (www.example.com) for
+// this URL must be whitelisted in the Firebase Console.
+const actionCodeSettings = { 
+  ...(process.env.FRONTEND_URL ? { url: process.env.FRONTEND_URL } : { url: '' }),
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -74,7 +74,7 @@ export const login: RequestHandler = (req, res) => {
 
 export const resetPassword: RequestHandler = (req, res) => {
   // Admin SDK API to generate the password reset link.
-  const userEmail = req.body.email || 'testuser@email.com';
+  const userEmail = req.body.email;
   console.log(userEmail);
   admin
     .auth()
@@ -84,7 +84,7 @@ export const resetPassword: RequestHandler = (req, res) => {
       // using custom SMTP server.
       const msg = {
         to: userEmail,
-        from: 'collaborative.tasks@gmail.com',
+        ...(process.env.SERVICE_EMAIL ? { from: process.env.SERVICE_EMAIL } : { from: '' }),
         subject: 'Password reset',
         text: `Hello! You have requested to recover your password. You can reset it by following the link: ${link}`,
         html: `<p>Hello! You have requested to recover your password. You can reset it by following the link: ${link}</p>`,
@@ -102,4 +102,12 @@ export const resetPassword: RequestHandler = (req, res) => {
       }
       res.status(500).json({ err });
     });
+};
+
+export const verifyToken:RequestHandler = (req, res) => {
+  const user = {
+    username: req.user.email,
+    email: req.user.email,
+  };
+  res.status(200).json({ user, ...(req.headers.authorization && { token: req.headers.authorization.split('Bearer ')[1] }) });
 };

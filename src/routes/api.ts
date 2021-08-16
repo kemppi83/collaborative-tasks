@@ -1,14 +1,13 @@
 import { Router } from 'express';
 
-import { test } from '../controllers/testController';
 import { createTodo, getTodos, updateTodo, deleteTodo } from '../controllers/todos';
-import { signUp, login, resetPassword } from '../controllers/auth';
+import { signUp, login, resetPassword, verifyToken } from '../controllers/auth';
 import { FBAuth } from '../util/fbAuth';
 
 const router = Router();
 
-// test route
-router.get('/protected', FBAuth, test);
+// verify token
+router.get('/verifytoken', FBAuth, verifyToken);
 
 // user routes
 router.post('/signup', signUp);
