@@ -24,18 +24,21 @@ export const getTodos: RequestHandler = (req, res, next) => {
 export const updateTodo: RequestHandler<{id: string}> = (req, res, next) => {
   console.log('TODOS: ', TODOS);
   const todoId = req.params.id;
-  if (todoId !== req.body.id) {
-    throw new Error("Request paramter id and request body id don't match");
-  }
 
-  const updatedTodo = req.body as Todo;
+  // const updatedTodo = req.body as Todo;
   const todoIndex = TODOS.findIndex(todo => todo.id === todoId);
   
   if (todoIndex < 0) {
     throw new Error('Could not find todo!');
   }
 
-  TODOS[todoIndex] = updatedTodo;
+  if (TODOS[todoIndex].status === 'active') {
+    TODOS[todoIndex].status = 'done';
+  } else {
+    TODOS[todoIndex].status = 'active';
+  }
+
+  console.log('TODOS: ', TODOS);
   res.json({ message: 'Updated!', updatedTodo: TODOS[todoIndex] });
 };
 
