@@ -1,24 +1,25 @@
-// import { Request, Response, NextFunction } from 'express';
-
-// export const createTodo = (req: Request, res: Response, next: NextFunction) => {};
-
-// The same can be done easier!
+import Todo from '../db/models/todos';
 import { RequestHandler } from 'express';
 
-import { Todo } from '../models/todo';
+import { DatabaseTodo } from '../models/todo';
 
-const TODOS: Todo[] = [];
+const TODOS: DatabaseTodo[] = [];
 
 export const createTodo: RequestHandler = (req, res, next) => {
-  const newTodo = req.body as Todo;
+  const newTodo = req.body as DatabaseTodo;
+  newTodo.owner = req.user.uid;
 
   TODOS.push(newTodo);
+  // const created = await Todo
   console.log('TODOS: ', TODOS);
   res.status(201).json({message: 'Created the todo.', createdTodo: newTodo});
 };
 
-export const getTodos: RequestHandler = (req, res, next) => {
-  res.json({todos: TODOS});
+export const getTodos: RequestHandler = async (req, res, next) => {
+  const { uid } = req.user;
+  const userOwnedTodos = await Todo.find({ owner: uid }, '-_id -owner') as DatabaseTodo[];
+  userOwnedTodos.map(todo => todo.owner=true);
+  res.json({todos: userOwnedTodos});
 };
 
 export const updateTodo: RequestHandler<{id: string}> = (req, res, next) => {
@@ -49,7 +50,7 @@ export const deleteTodo: RequestHandler<{id: string}> = (req, res, next) => {
   const todoIndex = TODOS.findIndex(todo => todo.id === todoId);
   
   if (todoIndex < 0) {
-    throw new Error('Could not find todo!');
+    res.json({ message: 'Could not find todo!' });
   }
 
   TODOS.splice(todoIndex, 1);

@@ -9,7 +9,9 @@ import { sendEmail } from '../util/sendEmail';
 // URL you want to redirect back to. The domain (www.example.com) for
 // this URL must be whitelisted in the Firebase Console.
 const actionCodeSettings = { 
-  ...(process.env.FRONTEND_URL ? { url: process.env.FRONTEND_URL } : { url: '' }),
+  ...(process.env.NODE_ENV === 'development'
+  ? { url: `${process.env.FRONTEND_URL_DEV}/login` }
+  : { url: `${process.env.FRONTEND_URL_PROD}/login` }),
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -57,11 +59,7 @@ export const login: RequestHandler = (req, res) => {
       return data.user?.getIdToken();
     })
     .then(token => {
-      return res.json({ user: {
-        first_name: 'Test',
-        last_name: 'User',
-      },
-      token, });
+      return res.json({ user, token, });
     })
     .catch(err => {
       console.error(err);
