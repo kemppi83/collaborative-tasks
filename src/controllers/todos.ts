@@ -5,19 +5,20 @@ import { DatabaseTodo } from '../models/todo';
 
 const TODOS: DatabaseTodo[] = [];
 
-export const createTodo: RequestHandler = (req, res, next) => {
+export const createTodo: RequestHandler = async (req, res, next) => {
   const newTodo = req.body as DatabaseTodo;
   newTodo.owner = req.user.uid;
 
   TODOS.push(newTodo);
-  // const created = await Todo
+  const created = await Todo.create(newTodo);
   console.log('TODOS: ', TODOS);
-  res.status(201).json({message: 'Created the todo.', createdTodo: newTodo});
+  res.status(201).json({message: 'Created the todo.', createdTodo: created});
 };
 
 export const getTodos: RequestHandler = async (req, res, next) => {
-  const { uid } = req.user;
-  const userOwnedTodos = await Todo.find({ owner: uid }, '-_id -owner') as DatabaseTodo[];
+  // const { uid } = req.user;
+  // const userOwnedTodos = await Todo.find({ owner: uid }, '-_id -owner') as DatabaseTodo[];
+  const userOwnedTodos = await Todo.find({}) as DatabaseTodo[];
   userOwnedTodos.map(todo => todo.owner=true);
   res.json({todos: userOwnedTodos});
 };
