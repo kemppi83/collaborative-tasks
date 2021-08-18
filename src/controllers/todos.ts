@@ -11,7 +11,7 @@ export const createTodo: RequestHandler = async (req, res, next) => {
 
   TODOS.push(newTodo);
   const created = await Todo.create(newTodo);
-  console.log('TODOS: ', TODOS);
+  // console.log('TODOS: ', TODOS);
   res.status(201).json({message: 'Created the todo.', createdTodo: created});
 };
 
@@ -24,7 +24,7 @@ export const getTodos: RequestHandler = async (req, res, next) => {
 };
 
 export const updateTodo: RequestHandler<{id: string}> = (req, res, next) => {
-  console.log('TODOS: ', TODOS);
+  // console.log('TODOS: ', TODOS);
   const todoId = req.params.id;
 
   // const updatedTodo = req.body as Todo;
@@ -40,12 +40,12 @@ export const updateTodo: RequestHandler<{id: string}> = (req, res, next) => {
     TODOS[todoIndex].status = 'active';
   }
 
-  console.log('TODOS: ', TODOS);
+  // console.log('TODOS: ', TODOS);
   res.json({ message: 'Updated!', updatedTodo: TODOS[todoIndex] });
 };
 
 export const deleteTodo: RequestHandler<{id: string}> = (req, res, next) => {
-  console.log('TODOS: ', TODOS);
+  // console.log('TODOS: ', TODOS);
   const todoId = req.params.id;
 
   const todoIndex = TODOS.findIndex(todo => todo.id === todoId);
