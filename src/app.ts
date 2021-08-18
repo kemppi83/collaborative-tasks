@@ -1,17 +1,18 @@
 import express, { Request, Response, NextFunction } from 'express';
+import helmet from 'helmet';
 import cors from 'cors';
-import { json } from 'body-parser';
-import * as dotenv from "dotenv";
-dotenv.config();
 
 import todoRoutes from './routes/api';
 
-
 const app = express();
 
-app.use(cors());
+const origin = process.env.NODE_ENV === 'development'
+  ? process.env.FRONTEND_URL_DEV
+  : process.env.FRONTEND_URL_PROD;
 
-app.use(json());
+app.use(helmet());
+app.use(cors({ origin }));
+app.use(express.json());
 
 app.use('/api', todoRoutes);
 
