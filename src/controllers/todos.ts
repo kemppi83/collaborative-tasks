@@ -1,7 +1,8 @@
 import Todo from '../db/models/todos';
 import { RequestHandler } from 'express';
 
-import { DatabaseTodo } from '../models/todo';
+import { DatabaseTodo } from '../models/models';
+import { dbGetTodos } from '../db/helpers'; 
 
 export const createTodo: RequestHandler = async (req, res, next) => {
   const newTodo = req.body as DatabaseTodo;
@@ -13,11 +14,8 @@ export const createTodo: RequestHandler = async (req, res, next) => {
 
 export const getTodos: RequestHandler = async (req, res, next) => {
   const { uid } = req.user;
-  const userOwnedTodos = await Todo.find({ owner: uid }, '-_id -owner') as DatabaseTodo[];
-  userOwnedTodos.map(todo => todo.owner=true);
-  const collaborationTodos = await Todo.find({ collaborators: uid }) as DatabaseTodo[];
-  collaborationTodos.map(todo => todo.owner=false);
-  res.json({todos: [...userOwnedTodos, ...collaborationTodos]});
+  const userTodos = await dbGetTodos(uid);
+  res.json({todos: userTodos});
 };
 
 export const updateTodo: RequestHandler<{id: string}> = async (req, res, next) => {
