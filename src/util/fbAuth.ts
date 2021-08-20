@@ -22,7 +22,6 @@ export const FBAuth: RequestHandler = (req, res, next) => {
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const FBAuthSocket = async (token: string) => {
-  console.log('hello from FBAuthSocket');
   try {
     const decodedToken = await admin.auth().verifyIdToken(token);
     return decodedToken.uid;

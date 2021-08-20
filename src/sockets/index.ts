@@ -34,22 +34,51 @@ const socketHandler = (io: Server): void => {
       if (socket.user) {
         userTodos = await dbGetTodos(socket.user);
       }
+      // const userTasks = [] as Task[];
+      // userTodos.forEach(async todo => {
+      //   socket.join(todo.id);
+      //   const taskToClient = await DBTask.find({ parent_todo: todo.id }) as Task[];
+      //   userTasks.push(...taskToClient);
+      // });
+      // socket.emit('task:toClient', userTasks);
       userTodos.forEach(async todo => {
         socket.join(todo.id);
         const taskToClient = await DBTask.find({ parent_todo: todo.id }) as Task[];
         taskToClient.map(task => {
-          socket.emit('task:new', task);
+          socket.emit('task:toClient', task);
         });
       });
       console.log('socket#rooms: ', socket.rooms);
     });
-    
-    // socket.emit('tasks_to_client', todiI)
 
-    socket.on('join', async (todoId) => {
-      socket.join(todoId);
-      const taskToClient = await DBTask.find({ parent_todo: todoId });
-      console.log(`tasks of todo ${todoId}`, taskToClient);
+    socket.on('task:add', async (task: Task) => {
+      socket.join(task.parent_todo);
+      try {
+        await DBTask.create(task);
+        socket.to(task.parent_todo).emit('task:toClient', task);
+      } catch (err) {
+        socket.emit('error', err);
+      }
+    });
+    
+    socket.on('task:update', async (task: Task) => {
+      const filter = { id: task.id };
+      try {
+        await DBTask.findOneAndUpdate(filter, task);
+        socket.to(task.parent_todo).emit('task:serverUpdated', task);
+      } catch (err) {
+        socket.emit('error', err);
+      }
+    });
+    
+    socket.on('task:delete', async (taskId: string, todoId: string) => {
+      const filter = { id: taskId };
+      try {
+        await DBTask.deleteOne(filter);
+        socket.to(todoId).emit('task:serverDeleted', taskId);
+      } catch (err) {
+        socket.emit('error', err);
+      }
     });
 
     socket.on('connect_error', err => {
@@ -57,10 +86,7 @@ const socketHandler = (io: Server): void => {
       console.log(err.message); // not authorized
       console.log(err.data); // { content: "Please retry later" }
     });
-    socket.on('message', msg => {
-      // console.log('got: ', msg);
-      socket.broadcast.emit('message', msg);
-    });
+    
     socket.on('disconnect', () => console.log('User has disconnected'));
   });
 };
