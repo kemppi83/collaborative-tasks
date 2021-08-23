@@ -47,7 +47,7 @@ export const login: RequestHandler = (req, res) => {
     email: req.body.email,
     password: req.body.password
   };
-  console.log(req.body);
+  // console.log(req.body);
   const { valid, errors } = validateLoginData(user);
 
   if (!valid) return res.status(400).json(errors);
@@ -73,7 +73,7 @@ export const login: RequestHandler = (req, res) => {
 export const resetPassword: RequestHandler = (req, res) => {
   // Admin SDK API to generate the password reset link.
   const userEmail = req.body.email;
-  console.log(userEmail);
+  // console.log(userEmail);
   admin
     .auth()
     .generatePasswordResetLink(userEmail, actionCodeSettings)

@@ -9,14 +9,13 @@ export interface DatabaseTodo {
   tasks: string[];
   owner?: boolean | string;
 }
-// export class Todo {
-//   // TS shorthand syntax:
-//   constructor(
-//     public id: string,
-//     public title: string,
-//     public text: string,
-//     public timestamp: number,
-//     public status: string,
-//     public tasks: 
-//     ) {}
-// }
+
+export interface Task {
+  id: string;
+  parent_todo: string;
+  parent_task?: string;
+  title: string;
+  timestamp: number;
+  status: string;
+  children: string[];
+}
