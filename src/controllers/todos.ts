@@ -1,59 +1,54 @@
 import Todo from '../db/models/todos';
 import { RequestHandler } from 'express';
 
-import { DatabaseTodo } from '../models/todo';
-
-const TODOS: DatabaseTodo[] = [];
+import { DatabaseTodo } from '../models/models';
+import { dbGetTodos } from '../db/helpers'; 
 
 export const createTodo: RequestHandler = async (req, res, next) => {
   const newTodo = req.body as DatabaseTodo;
   newTodo.owner = req.user.uid;
 
-  TODOS.push(newTodo);
   const created = await Todo.create(newTodo);
-  console.log('TODOS: ', TODOS);
   res.status(201).json({message: 'Created the todo.', createdTodo: created});
 };
 
 export const getTodos: RequestHandler = async (req, res, next) => {
-  // const { uid } = req.user;
-  // const userOwnedTodos = await Todo.find({ owner: uid }, '-_id -owner') as DatabaseTodo[];
-  const userOwnedTodos = await Todo.find({}) as DatabaseTodo[];
-  userOwnedTodos.map(todo => todo.owner=true);
-  res.json({todos: userOwnedTodos});
+  const { uid } = req.user;
+  const userTodos = await dbGetTodos(uid);
+  res.json({todos: userTodos});
 };
 
-export const updateTodo: RequestHandler<{id: string}> = (req, res, next) => {
-  console.log('TODOS: ', TODOS);
-  const todoId = req.params.id;
+export const updateTodo: RequestHandler<{id: string}> = async (req, res, next) => {
+  const todo = await Todo.findOne({
+    id: req.params.id
+  });
 
-  // const updatedTodo = req.body as Todo;
-  const todoIndex = TODOS.findIndex(todo => todo.id === todoId);
-  
-  if (todoIndex < 0) {
-    throw new Error('Could not find todo!');
+  if (!todo) {
+    res.status(400).json({ message: 'Todo not found' });
   }
 
-  if (TODOS[todoIndex].status === 'active') {
-    TODOS[todoIndex].status = 'done';
-  } else {
-    TODOS[todoIndex].status = 'active';
-  }
+  Object.keys(req.body).map(key => {
+    console.log('todo[key]: ', todo[key]);
+    console.log('req.body[key]: ', req.body[key]);
+    if (todo[key]) {
+      todo[key] = req.body[key];
+    } else {
+      res.status(400).json({ message: `Database 'todos' schema does not include the key ${key}.` });
+    }
+  });
 
-  console.log('TODOS: ', TODOS);
-  res.json({ message: 'Updated!', updatedTodo: TODOS[todoIndex] });
+  const updatedTodo = await todo.save();
+  res.json({ message: 'Updated!', updatedTodo });
 };
 
 export const deleteTodo: RequestHandler<{id: string}> = (req, res, next) => {
-  console.log('TODOS: ', TODOS);
-  const todoId = req.params.id;
-
-  const todoIndex = TODOS.findIndex(todo => todo.id === todoId);
+  Todo.deleteOne({
+      id: req.params.id
+    }, err => {
+      if (err) {
+        res.status(500).json({ message: err.message });
+      }
+    });
   
-  if (todoIndex < 0) {
-    res.json({ message: 'Could not find todo!' });
-  }
-
-  TODOS.splice(todoIndex, 1);
   res.json({ message: 'Todo deleted!' });
 };
