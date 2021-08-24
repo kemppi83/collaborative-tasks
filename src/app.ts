@@ -9,9 +9,18 @@ import socketHandler from './sockets';
 
 const app = express();
 
-const origin = process.env.NODE_ENV === 'development'
-  ? process.env.FRONTEND_URL_DEV
-  : process.env.FRONTEND_URL_PROD;
+let origin: string;
+if (process.env.NODE_ENV === 'production') {
+  if (!process.env.FRONTEND_URL_PROD) {
+    throw new Error('Frontend URL not provided');
+  }
+  origin = `${process.env.FRONTEND_URL_PROD}`;
+} else {
+  if (!process.env.FRONTEND_URL_DEV) {
+    throw new Error('Frontend URL not provided');
+  }
+  origin = `${process.env.FRONTEND_URL_DEV}`;
+}
 
 app.use(helmet());
 app.use(cors({ origin }));
@@ -30,7 +39,7 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: ['http://localhost:3000'],
+    origin: [origin],
     credentials: true
   }
 });
