@@ -5,6 +5,7 @@ import { firebaseConfig } from '../util/config';
 import { validateSignUpData, validateLoginData } from '../util/validators';
 import admin from '../util/initAdmin';
 import { sendEmail } from '../util/sendEmail';
+import User from '../db/models/users';
 
 // URL you want to redirect back to. The domain (www.example.com) for
 // this URL must be whitelisted in the Firebase Console.
@@ -29,6 +30,11 @@ export const signUp: RequestHandler = (req, res) => {
 
   firebase.auth().createUserWithEmailAndPassword(newUser.email, newUser.password)
     .then(data => {
+      User.create({
+        uid: data.user?.uid,
+        username: req.body.username,
+        email: data.user?.email
+      });
       return data.user?.getIdToken();
     })
     .then(token => {

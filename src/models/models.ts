@@ -19,3 +19,11 @@ export interface Task {
   status: string;
   children: string[];
 }
+
+export interface DatabaseUser {
+  uid: string,
+  username: string,
+  email: string,
+  owned_todos: string[],
+  joined_todos: string[],
+}

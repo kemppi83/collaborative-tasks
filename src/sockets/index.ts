@@ -1,9 +1,9 @@
 import { Server, Socket } from 'socket.io';
-
 import { FBAuthSocket } from "../util/fbAuth";
 import { dbGetTodos } from '../db/helpers';
-import { DatabaseTodo, Task } from '../models/models';
+import { DatabaseTodo, Task, DatabaseUser } from '../models/models';
 import DBTask from '../db/models/tasks';
+import User from '../db/models/users';
 
 interface UserSocket extends Socket {
   user?: string;
@@ -13,13 +13,7 @@ const socketHandler = (io: Server): void => {
   io.use(async (socket: UserSocket, next) => {
     try {
       socket.user = await FBAuthSocket(socket.handshake.auth.token);
-      // let userTodos: DatabaseTodo[] = [];
-      // if (socket.user) {
-      //   userTodos = await dbGetTodos(socket.user);
-      // }
-      // userTodos.forEach(todo => {
-      //   socket.join(todo.id);
-      // });
+      
       next();
     } catch (err) {
       next(err);
@@ -27,20 +21,14 @@ const socketHandler = (io: Server): void => {
   });
   
   io.on('connection', (socket: UserSocket) => {
-    // console.log('socket_id: ', socket.id);
     socket.on('init', async () => {
-      console.log('initissä ollaan');
+      if (socket.user) {
+        socket.join(socket.user);
+      }
       let userTodos: DatabaseTodo[] = [];
       if (socket.user) {
         userTodos = await dbGetTodos(socket.user);
       }
-      // const userTasks = [] as Task[];
-      // userTodos.forEach(async todo => {
-      //   socket.join(todo.id);
-      //   const taskToClient = await DBTask.find({ parent_todo: todo.id }) as Task[];
-      //   userTasks.push(...taskToClient);
-      // });
-      // socket.emit('task:toClient', userTasks);
       userTodos.forEach(async todo => {
         socket.join(todo.id);
         const taskToClient = await DBTask.find({ parent_todo: todo.id }) as Task[];
@@ -48,7 +36,7 @@ const socketHandler = (io: Server): void => {
           socket.emit('task:toClient', task);
         });
       });
-      console.log('socket#rooms: ', socket.rooms);
+      // console.log('socket#rooms: ', socket.rooms);
     });
 
     socket.on('task:add', async (task: Task) => {
@@ -70,7 +58,7 @@ const socketHandler = (io: Server): void => {
         socket.emit('error', err);
       }
     });
-    
+
     socket.on('task:delete', async (taskId: string, todoId: string) => {
       const filter = { id: taskId };
       try {
@@ -79,6 +67,45 @@ const socketHandler = (io: Server): void => {
       } catch (err) {
         socket.emit('error', err);
       }
+    });
+
+    socket.on('todo:add', async (todo: DatabaseTodo) => {
+      const callDb = async (email: string) => {
+        return await User.findOne({
+          email
+        }) as DatabaseUser;
+      };
+    
+      const collaboratorPromises = async () => {
+        return Promise.all(todo.collaborators.map(email => callDb(email)));
+      };
+    
+      const collaborators = await collaboratorPromises();
+      collaborators.map(collab => {
+        io.to(collab.uid).emit('todo:toClient', todo);
+      });
+    });
+
+    socket.on('todo:subscribe', async (todoId: string) => {
+      socket.join(todoId);
+      const taskToClient = await DBTask.find({ parent_todo: todoId }) as Task[];
+      taskToClient.map(task => {
+        socket.emit('task:toClient', task);
+      });
+      // console.log('socket#rooms: ', socket.rooms);
+    });
+
+    socket.on('todo:update', (todo: DatabaseTodo) => {
+      console.log(todo);
+      io.to(todo.id).emit('todo:serverUpdated', todo);
+    });
+
+    socket.on('todo:delete', (todoId:string) => {
+      io.to(todoId).emit('todo:unsubscribe', todoId);
+    });
+
+    socket.on('todo:leave-room', (todoId: string) => {
+      socket.leave(todoId);
     });
 
     socket.on('connect_error', err => {

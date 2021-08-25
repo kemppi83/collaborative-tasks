@@ -1,12 +1,27 @@
 import Todo from '../db/models/todos';
+import User from '../db/models/users';
 import { RequestHandler } from 'express';
 
-import { DatabaseTodo } from '../models/models';
+import { DatabaseTodo, DatabaseUser } from '../models/models';
 import { dbGetTodos } from '../db/helpers'; 
 
 export const createTodo: RequestHandler = async (req, res, next) => {
   const newTodo = req.body as DatabaseTodo;
   newTodo.owner = req.user.uid;
+
+  const callDb = async (email: string) => {
+    return await User.findOne({
+      email
+    }) as DatabaseUser;
+  };
+
+  const collaboratorPromises = async () => {
+    return Promise.all(newTodo.collaborators.map(email => callDb(email)));
+  };
+
+  const collaborators = await collaboratorPromises();
+  const uids = collaborators.map(collab => collab.uid);
+  newTodo.collaborators = uids;
 
   const created = await Todo.create(newTodo);
   res.status(201).json({message: 'Created the todo.', createdTodo: created});
