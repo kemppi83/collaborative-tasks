@@ -30,15 +30,16 @@ export const signUp: RequestHandler = (req, res) => {
 
   firebase.auth().createUserWithEmailAndPassword(newUser.email, newUser.password)
     .then(data => {
-      User.create({
-        uid: data.user?.uid,
+      req.user = {
         username: req.body.username,
         email: data.user?.email
-      });
+      };
+      User.create({ ...req.user, uid: data.user?.uid });
       return data.user?.getIdToken();
     })
     .then(token => {
-      return res.status(201).json({ token });
+      console.log('return object: ', { user: req.user, token });
+      return res.status(201).json({ user: req.user, token });
     })
     .catch(err => {
       if (err.code === 'auth/email-already-in-use') {
@@ -48,38 +49,41 @@ export const signUp: RequestHandler = (req, res) => {
     });
 };
 
-export const login: RequestHandler = (req, res) => {
-  const user = {
+export const login: RequestHandler = async (req, res) => {
+  const credentials = {
     email: req.body.email,
     password: req.body.password
   };
-  // console.log(req.body);
-  const { valid, errors } = validateLoginData(user);
+  const { valid, errors } = validateLoginData(credentials);
 
   if (!valid) return res.status(400).json(errors);
 
-  firebase
-    .auth()
-    .signInWithEmailAndPassword(user.email, user.password)
-    .then(data => {
-      return data.user?.getIdToken();
-    })
-    .then(token => {
-      return res.json({ user, token, });
-    })
-    .catch(err => {
-      console.error(err);
-      if (err.code === 'auth/wrong-password') {
-        return res.status(403).json({ general: 'Wrong credentials, please try again'});
-      }
-      return res.status(500).json({ error: err.message });
-    });
+  try {
+    const userData = await firebase
+      .auth()
+      .signInWithEmailAndPassword(credentials.email, credentials.password);
+  
+    const userInDatabase = await User.findOne({
+      uid: userData.user?.uid
+    }, '-_id -owned_todos -joined_todos -__v -uid');
+
+    const token = await userData.user?.getIdToken();
+
+    console.log('return object: ', { user: userInDatabase, token });
+    res.json({ user: userInDatabase, token });
+
+  } catch (err) {
+    console.error(err);
+    if (err.code === 'auth/wrong-password') {
+      return res.status(403).json({ general: 'Wrong credentials, please try again'});
+    }
+    return res.status(500).json({ error: err.message });
+  }
 };
 
 export const resetPassword: RequestHandler = (req, res) => {
   // Admin SDK API to generate the password reset link.
   const userEmail = req.body.email;
-  // console.log(userEmail);
   admin
     .auth()
     .generatePasswordResetLink(userEmail, actionCodeSettings)
