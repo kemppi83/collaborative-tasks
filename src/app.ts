@@ -9,6 +9,8 @@ import socketHandler from './sockets';
 
 const app = express();
 
+app.get('/ping', cors(), (req: Request, res: Response) => res.send('Hello'));
+
 let origin: string;
 if (process.env.NODE_ENV === 'production') {
   if (!process.env.FRONTEND_URL_PROD) {
